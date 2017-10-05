@@ -9,3 +9,6 @@ build/
 *.list
 *.srec
 *.log
+
+# QtCreator IDE
+trezor-mcu.*
