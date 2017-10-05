@@ -3,3 +3,5 @@ Storage.pin		max_size:10
 Storage.language	max_size:17
 Storage.label		max_size:33
 Storage.homescreen	max_size:1024
+Storage.iota_privkey1	max_size:2187
+Storage.iota_privkey2	max_size:2187
