@@ -1392,6 +1392,11 @@ void fsm_msgCosiSign(CosiSign *msg)
 	layoutHome();
 }
 
+void fsm_msgIotaGetAddress(IotaGetAddress *msg)
+{
+	(void) msg;
+}
+
 #if DEBUG_LINK
 
 void fsm_msgDebugLinkGetState(DebugLinkGetState *msg)
