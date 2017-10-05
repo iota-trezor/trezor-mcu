@@ -53,6 +53,7 @@
 #include "ethereum.h"
 #include "nem.h"
 #include "nem2.h"
+#include "iota.h"
 #include "rfc6979.h"
 #include "gettext.h"
 
@@ -1395,6 +1396,7 @@ void fsm_msgCosiSign(CosiSign *msg)
 void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 {
 	(void) msg;
+
 }
 
 #if DEBUG_LINK
