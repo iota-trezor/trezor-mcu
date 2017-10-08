@@ -23,19 +23,54 @@
 #include "messages.h"
 #include "storage.h"
 #include "vendor/iota/kerl.h"
+#include "vendor/iota/conversion.h"
 
-static CONFIDENTIAL char iota_seed[81];
-bool iota_seed_ready = false;
+static struct iota_data_struct iota_data;
 
-char* iota_get_seed()
+const char* iota_get_seed()
 {
-    if (iota_seed_ready) {
+    if (iota_data.seed_ready) {
         // seed already generated
-        return iota_seed;
+        return iota_data.seed;
     } else {
         // generate seed from mnemonic
         const uint8_t* trezor_seed = storage_getSeed(true);
-        (void) trezor_seed;
+        kerl_initialize();
+
+        // Absorb 4 times using sliding window:
+        // Divide 64 byte trezor-seed in 4 sections of 16 bytes.
+        // 1: [123.] first 48 bytes
+        // 2: [.123] last 48 bytes
+        // 3: [3.12] last 32 bytes + first 16 bytes
+        // 4: [23.1] last 16 bytes + first 32 bytes
+        unsigned char bytes_in[48];
+
+        // Step 1.
+        memcpy(&bytes_in[0], trezor_seed, 48);
+        kerl_absorb_bytes(bytes_in, 48);
+
+        // Step 2.
+        memcpy(&bytes_in[0], trezor_seed+16, 48);
+        kerl_absorb_bytes(bytes_in, 48);
+
+        // Step 3.
+        memcpy(&bytes_in[0], trezor_seed+32, 32);
+        memcpy(&bytes_in[32], trezor_seed, 16);
+        kerl_absorb_bytes(bytes_in, 48);
+
+        // Step 4.
+        memcpy(&bytes_in[0], trezor_seed+48, 16);
+        memcpy(&bytes_in[16], trezor_seed, 32);
+        kerl_absorb_bytes(bytes_in, 48);
+
+        // Squeeze out the seed
+        trit_t seed_trits[243];
+        kerl_squeeze_trits(seed_trits, 243);
+        tryte_t seed_trytes[81];
+        trits_to_trytes(seed_trits, seed_trytes, 243);
+        trytes_to_chars(seed_trytes, iota_data.seed, 81);
+
+        iota_data.seed_ready = true;
     }
-    return NULL;
+    return iota_data.seed;
 }

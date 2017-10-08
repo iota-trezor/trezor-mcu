@@ -20,6 +20,15 @@
 #ifndef __IOTA_H__
 #define __IOTA_H__
 
-char* iota_get_seed(void);
+#include "options.h"
+#include "stdbool.h"
+
+struct iota_data_struct {
+    char seed[81];
+    bool seed_ready;
+};
+
+
+const char *iota_get_seed(void);
 
 #endif
