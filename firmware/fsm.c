@@ -1396,6 +1396,13 @@ void fsm_msgCosiSign(CosiSign *msg)
 void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 {
 	(void) msg;
+    RESP_INIT(IotaAddress);
+
+    CHECK_INITIALIZED
+
+    CHECK_PIN
+
+    iota_get_seed();
 
 }
 

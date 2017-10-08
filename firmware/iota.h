@@ -20,4 +20,6 @@
 #ifndef __IOTA_H__
 #define __IOTA_H__
 
+char* iota_get_seed(void);
+
 #endif

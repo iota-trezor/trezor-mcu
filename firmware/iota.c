@@ -21,4 +21,21 @@
 #include "fsm.h"
 #include "layout2.h"
 #include "messages.h"
+#include "storage.h"
+#include "vendor/iota/kerl.h"
 
+static CONFIDENTIAL char iota_seed[81];
+bool iota_seed_ready = false;
+
+char* iota_get_seed()
+{
+    if (iota_seed_ready) {
+        // seed already generated
+        return iota_seed;
+    } else {
+        // generate seed from mnemonic
+        const uint8_t* trezor_seed = storage_getSeed(true);
+        (void) trezor_seed;
+    }
+    return NULL;
+}
