@@ -1402,7 +1402,18 @@ void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 
     CHECK_PIN
 
-    iota_get_seed();
+    const char* iota_seed = iota_get_seed();
+
+    if (msg->has_seed_index) {
+        // Specific address requested
+
+    } else {
+        // No specific address requested, let the trezor decide.
+    }
+
+    resp->has_seed_index = false;
+    memcpy(resp->address, iota_seed, 81);
+    msg_write(MessageType_MessageType_IotaAddress, resp);
 
 }
 

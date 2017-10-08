@@ -24,6 +24,7 @@
 #include "storage.h"
 #include "vendor/iota/kerl.h"
 #include "vendor/iota/conversion.h"
+#include "vendor/iota/addresses.h"
 
 static struct iota_data_struct iota_data;
 
@@ -73,4 +74,24 @@ const char* iota_get_seed()
         iota_data.seed_ready = true;
     }
     return iota_data.seed;
+}
+
+unsigned char* iota_address_from_seed_with_index(uint32_t index)
+{
+    if (!iota_data.seed_ready) {
+        iota_get_seed();
+    }
+
+    // Seed to trits
+    trit_t seed_trits[243];
+    {
+        tryte_t seed_trytes[81];
+        chars_to_trytes(iota_data.seed, seed_trytes, 81);
+        trytes_to_trits(seed_trytes, seed_trits, 81);
+    }
+    trit_t private_key_trits[243*27*2];
+    generate_private_key(seed_trits, index, private_key_trits);
+    //generate_public_address(private_key_trits,
+
+    return NULL;
 }

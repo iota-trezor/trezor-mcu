@@ -162,6 +162,8 @@ CosiSign.global_pubkey			max_size:32
 
 CosiSignature.signature			max_size:32
 
+IotaAddress.address			max_size:81
+
 # deprecated
 SimpleSignTx				skip_message:true
 

@@ -20,8 +20,8 @@
 #ifndef __IOTA_H__
 #define __IOTA_H__
 
-#include "options.h"
-#include "stdbool.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 struct iota_data_struct {
     char seed[81];
@@ -30,5 +30,6 @@ struct iota_data_struct {
 
 
 const char *iota_get_seed(void);
+unsigned char* iota_address_from_seed_with_index(uint32_t index);
 
 #endif
