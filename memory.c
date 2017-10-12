@@ -27,6 +27,7 @@
 
 void memory_protect(void)
 {
+    return; // BAIL OUT, DON'T DO THISSSS NOW
 #if MEMORY_PROTECT
 	// Reference STM32F205 Flash programming manual revision 5 http://www.st.com/resource/en/programming_manual/cd00233952.pdf
 	// Section 2.6 Option bytes
@@ -34,7 +35,7 @@ void memory_protect(void)
 	if (((FLASH_OPTION_BYTES_1 & 0xFFEC) == 0xCCEC) && ((FLASH_OPTION_BYTES_2 & 0xFFF) == 0xFFC) && (FLASH_OPTCR == 0x0FFCCCED)) {
 		return; // already set up correctly - bail out
 	}
-	flash_unlock_option_bytes();
+	/////////////flash_unlock_option_bytes();
 	// Section 2.8.6 Flash option control register (FLASH_OPTCR)
 	//   Bits 31:28 Reserved, must be kept cleared.
 	//   Bits 27:16 nWRP: Not write protect: write protect bootloader code in flash main memory sectors 0 and 1 (Section 2.3; table 2)
@@ -44,8 +45,8 @@ void memory_protect(void)
 	//   Bits 3:2 BOR_LEV: BOR reset Level: BOR off
 	//   Bit 1 OPTSTRT: Option start: ignored by flash_program_option_bytes
 	//   Bit 0 OPTLOCK: Option lock: ignored by flash_program_option_bytes
-	flash_program_option_bytes(0x0FFCCCEC);
-	flash_lock_option_bytes();
+	////////////flash_program_option_bytes(0x0FFCCCEC);
+	/////////////flash_lock_option_bytes();
 #endif
 }
 
