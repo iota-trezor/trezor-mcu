@@ -343,6 +343,19 @@ void layoutAddress(const char *address, const char *desc, bool qrcode)
 	oledRefresh();
 }
 
+void layoutIotaAddress(const char *address)
+{
+	oledSwipeLeft();
+	oledDrawString(0, 0 * 9, "IOTA  receive address:");
+	for (int i = 0; i < 81; i++) {
+		int row = i / 14;
+		int col = i % 14;
+		int offset = (8 - fontCharWidth(address[i])) / 2;
+		oledDrawChar(col * 9 + offset, row * 9 + 10, address[i], 1);
+	}
+	oledRefresh();
+}
+
 void layoutPublicKey(const uint8_t *pubkey)
 {
 	char hex[32*2+1], desc[16];

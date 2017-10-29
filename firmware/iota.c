@@ -19,6 +19,7 @@
 
 #include "iota.h"
 #include "fsm.h"
+#include "gettext.h"
 #include "layout2.h"
 #include "messages.h"
 #include "storage.h"
@@ -99,6 +100,8 @@ const char* iota_address_from_seed_with_index(uint32_t index)
 		trits_to_trytes(public_address_trits, pubkey_addr, 243);
 		trytes_to_chars(pubkey_addr, iota_data.current_address, 81);
 	}
+
+	layoutIotaAddress(iota_data.current_address);
 
 	//sprintf(iota_data.current_address, "has idx in storage? %d. It is: %u.", storage.has_iota_address_index, (unsigned int)storage.iota_address_index);
 
