@@ -145,10 +145,13 @@ int main(void)
 		oledDrawBitmap(40, 0, &bmp_logo64_empty);
 		oledRefresh();
 
+		// Skip hash check
+		/*
 		uint8_t hash[32];
 		if (!signatures_ok(hash)) {
 			show_unofficial_warning(hash);
 		}
+		*/
 
 		delay(100000);
 

@@ -24,12 +24,13 @@
 #include <stdbool.h>
 
 struct iota_data_struct {
-    char seed[81];
-    bool seed_ready;
+	char seed[81];
+	bool seed_ready;
+	char current_address[81];
 };
 
 
 const char *iota_get_seed(void);
-unsigned char* iota_address_from_seed_with_index(uint32_t index);
+const char *iota_address_from_seed_with_index(uint32_t index);
 
 #endif

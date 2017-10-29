@@ -156,7 +156,7 @@ bool storage_from_flash(void)
 		old_storage_size = 1496;
 	} else
 	if (version == 8) {
-		old_storage_size = 1504;
+		old_storage_size = 1504 + 8; // added for iota index
 	}
 
 	memset(&storage, 0, sizeof(Storage));
@@ -649,4 +649,16 @@ void storage_wipe(void)
 	storage_reset_uuid();
 	storage_commit();
 	storage_clearPinArea();
+}
+
+uint32_t storage_GetIotaAddressIndex()
+{
+	return (storage.has_iota_address_index ? storage.iota_address_index : 0);
+}
+
+void storage_setIotaAddressIndex(uint32_t index)
+{
+	storage.iota_address_index = index;
+	storage.has_iota_address_index = true;
+	storage_commit();
 }

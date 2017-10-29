@@ -1396,24 +1396,34 @@ void fsm_msgCosiSign(CosiSign *msg)
 void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 {
 	(void) msg;
-    RESP_INIT(IotaAddress);
+	RESP_INIT(IotaAddress);
 
-    CHECK_INITIALIZED
+	CHECK_INITIALIZED
 
-    CHECK_PIN
+	CHECK_PIN
 
-    const char* iota_seed = iota_get_seed();
+	uint32_t seed_idx = 0;
+	if (msg->has_seed_index) {
+		// Specific address requested
+		seed_idx = msg->seed_index;
+		storage_setIotaAddressIndex(seed_idx);
 
-    if (msg->has_seed_index) {
-        // Specific address requested
+	} else if(storage.has_iota_address_index) {
+		// No specific address requested, check storage for index
+		seed_idx = storage.iota_address_index;
 
-    } else {
-        // No specific address requested, let the trezor decide.
-    }
+	} else {
+		// No index in storage, start at zero
+		storage_setIotaAddressIndex(0);
+	}
 
-    resp->has_seed_index = false;
-    memcpy(resp->address, iota_seed, 81);
-    msg_write(MessageType_MessageType_IotaAddress, resp);
+	// Create a private key
+	const char* public_address = iota_address_from_seed_with_index(seed_idx);
+
+	resp->has_seed_index = true;
+	resp->seed_index = seed_idx;
+	memcpy(resp->address, public_address, 81);
+	msg_write(MessageType_MessageType_IotaAddress, resp);
 
 }
 
