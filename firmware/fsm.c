@@ -1395,7 +1395,6 @@ void fsm_msgCosiSign(CosiSign *msg)
 
 void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 {
-	(void) msg;
 	RESP_INIT(IotaAddress);
 
 	CHECK_INITIALIZED
@@ -1424,7 +1423,26 @@ void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 	resp->seed_index = seed_idx;
 	memcpy(resp->address, public_address, 81);
 	msg_write(MessageType_MessageType_IotaAddress, resp);
+}
 
+void fsm_msgIotaShowSeed(IotaShowSeed *msg)
+{
+	CHECK_INITIALIZED
+
+	CHECK_PIN
+	(void) msg;
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("display IOTA seed?"), NULL, NULL, NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+	const char* iota_seed = iota_get_seed();
+	layoutIotaAddress(iota_seed, "IOTA  seed:");
+
+	protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false);
+	fsm_sendSuccess("Seed shown.");
+	layoutHome();
 }
 
 #if DEBUG_LINK

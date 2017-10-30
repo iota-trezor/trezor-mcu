@@ -343,10 +343,10 @@ void layoutAddress(const char *address, const char *desc, bool qrcode)
 	oledRefresh();
 }
 
-void layoutIotaAddress(const char *address)
+void layoutIotaAddress(const char *address, const char* descr)
 {
 	oledSwipeLeft();
-	oledDrawString(0, 0 * 9, "IOTA  receive address:");
+	oledDrawString(0, 0 * 9, descr);
 	for (int i = 0; i < 81; i++) {
 		int row = i / 14;
 		int col = i % 14;

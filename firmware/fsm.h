@@ -73,6 +73,7 @@ void fsm_msgCosiCommit(CosiCommit *msg);
 void fsm_msgCosiSign(CosiSign *msg);
 
 void fsm_msgIotaGetAddress(IotaGetAddress *msg);
+void fsm_msgIotaShowSeed(IotaShowSeed *msg);
 
 // debug message functions
 #if DEBUG_LINK

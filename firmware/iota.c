@@ -101,7 +101,7 @@ const char* iota_address_from_seed_with_index(uint32_t index)
 		trytes_to_chars(pubkey_addr, iota_data.current_address, 81);
 	}
 
-	layoutIotaAddress(iota_data.current_address);
+	layoutIotaAddress(iota_data.current_address, "IOTA  receive address:");
 
 	//sprintf(iota_data.current_address, "has idx in storage? %d. It is: %u.", storage.has_iota_address_index, (unsigned int)storage.iota_address_index);
 
