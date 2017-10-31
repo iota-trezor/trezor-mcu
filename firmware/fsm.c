@@ -1445,6 +1445,16 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 	layoutHome();
 }
 
+void fsm_msgIotaTxRequest(IotaTxRequest *msg)
+{
+	(void) msg;
+}
+
+void fsm_msgIotaTxDetails(IotaTxDetails *msg)
+{
+	(void) msg;
+}
+
 #if DEBUG_LINK
 
 void fsm_msgDebugLinkGetState(DebugLinkGetState *msg)
