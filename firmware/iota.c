@@ -107,3 +107,14 @@ const char* iota_address_from_seed_with_index(uint32_t index)
 
 	return iota_data.current_address;
 }
+
+// Returns the bundle hash
+const char* iota_create_bundle(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index)
+{
+	(void) to_address;
+	(void) amount;
+	(void) balance;
+	(void) seed_index;
+	(void) remainder_index;
+	return NULL;
+}

@@ -1430,6 +1430,7 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 	CHECK_INITIALIZED
 
 	CHECK_PIN
+
 	(void) msg;
 	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("display IOTA seed?"), NULL, NULL, NULL, NULL);
 	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
@@ -1447,7 +1448,33 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 
 void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 {
-	(void) msg;
+	RESP_INIT(IotaSignedTx);
+
+	CHECK_INITIALIZED
+
+	CHECK_PIN
+
+	uint32_t seed_index = 0;
+	uint32_t remainder_index = 0;
+
+	if (msg->has_seed_index) {
+		seed_index = msg->seed_index;
+
+	} else if (storage.has_iota_address_index) {
+		seed_index = storage.iota_address_index;
+
+	} else {
+		// No index in storage, start at zero
+		storage_setIotaAddressIndex(0);
+	}
+
+	if (msg->has_remainder_index) {
+		remainder_index = msg->remainder_index;
+	} else {
+		remainder_index = seed_index + 1;
+	}
+
+	iota_create_bundle(msg->receiving_address, msg->transfer_amount, msg->balance, seed_index, remainder_index);
 }
 
 void fsm_msgIotaTxDetails(IotaTxDetails *msg)

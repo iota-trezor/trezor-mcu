@@ -32,5 +32,6 @@ struct iota_data_struct {
 
 const char *iota_get_seed(void);
 const char *iota_address_from_seed_with_index(uint32_t index);
+const char* iota_create_bundle(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index);
 
 #endif
