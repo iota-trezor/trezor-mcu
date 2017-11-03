@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #include "layout2.h"
 #include "storage.h"
@@ -91,6 +92,7 @@ void layoutHome(void)
 		oledBox(0, 0, 127, 8, false);
 		oledDrawStringCenter(0, "NEEDS BACKUP!");
 	}
+
 	oledRefresh();
 
 	// Reset lock screen timeout

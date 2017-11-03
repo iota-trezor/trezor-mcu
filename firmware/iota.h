@@ -26,12 +26,11 @@
 struct iota_data_struct {
 	char seed[81];
 	bool seed_ready;
-	char current_address[81];
 };
 
-
+void iota_initialize(uint32_t seed_index, bool force_index);
 const char *iota_get_seed(void);
-const char *iota_address_from_seed_with_index(uint32_t index);
-const char* iota_create_bundle(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index);
+void iota_address_from_seed_with_index(uint32_t index, bool display, char public_address[]);
+const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[]);
 
 #endif

@@ -26,9 +26,46 @@
 #include "vendor/iota/kerl.h"
 #include "vendor/iota/conversion.h"
 #include "vendor/iota/addresses.h"
+#include "vendor/iota/transaction.h"
 #include <stdio.h>
 
 static struct iota_data_struct iota_data;
+
+void iota_initialize(uint32_t seed_index, bool force_index)
+{
+	// Has to be called before calling any of the other functions in this file.
+	// It does the following steps:
+	// 1. Get seed from mnemonic
+	// 2. Check if there is a first address, generate if not
+	// 3. Check if there is a next address, generate if not
+
+	// We will always need the seed, doesn't take much time.
+	iota_get_seed();
+
+	// Are we forcing the seed index to some value?
+	if (force_index) {
+		storage_setIotaAddressesInvalid();
+		storage_setIotaAddressIndex(seed_index);
+
+	} else if (storage.has_iota_address_index) {
+		seed_index = storage.iota_address_index;
+
+	} else {
+		// No index in storage, start at zero
+		storage_setIotaAddressesInvalid();
+		storage_setIotaAddressIndex(0);
+		seed_index = 0;
+	}
+
+	// Now we have the seed index. Check if we have the addresses. If not, generate
+	if (!storage.has_iota_address || !storage.has_iota_next_address) {
+		iota_address_from_seed_with_index(seed_index, false, storage.iota_address);
+		iota_address_from_seed_with_index(seed_index+1, false, storage.iota_next_address);
+		storage.has_iota_address = true;
+		storage.has_iota_next_address = true;
+		storage_commit();
+	}
+}
 
 const char* iota_get_seed()
 {
@@ -78,7 +115,7 @@ const char* iota_get_seed()
 	return iota_data.seed;
 }
 
-const char* iota_address_from_seed_with_index(uint32_t index)
+void iota_address_from_seed_with_index(uint32_t index, bool display, char public_address[])
 {
 	const char* iota_seed = iota_get_seed();
 
@@ -98,23 +135,66 @@ const char* iota_address_from_seed_with_index(uint32_t index)
 		generate_public_address(private_key_trits, public_address_trits);
 
 		trits_to_trytes(public_address_trits, pubkey_addr, 243);
-		trytes_to_chars(pubkey_addr, iota_data.current_address, 81);
+		trytes_to_chars(pubkey_addr, public_address, 81);
 	}
 
-	layoutIotaAddress(iota_data.current_address, "IOTA  receive address:");
-
-	//sprintf(iota_data.current_address, "has idx in storage? %d. It is: %u.", storage.has_iota_address_index, (unsigned int)storage.iota_address_index);
-
-	return iota_data.current_address;
+	if(display) {
+		layoutIotaAddress(public_address, "IOTA  receive address:");
+	}
 }
 
 // Returns the bundle hash
-const char* iota_create_bundle(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index)
+const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[])
 {
-	(void) to_address;
-	(void) amount;
-	(void) balance;
 	(void) seed_index;
 	(void) remainder_index;
+	(void) first_signature;
+	(void) second_signature;
+	const char tag[] = "TREZOR999999999999999999999";
+	// Step one is to find out the current address and the next address.
+
+	//char remainder_address[81];
+	//iota_address_from_seed_with_index(remainder_index, false, remainder_address);
+
+	//char from_address[81];
+	//iota_address_from_seed_with_index(seed_index, false, from_address);
+
+	tryte_t normalized_bundle_hash[81];
+	{
+		tryte_t bundle_hash_trytes[81];
+		calculate_standard_bundle_hash(storage.iota_address, to_address, storage.iota_next_address, balance, amount, tag, 0, bundle_hash_trytes);
+		trytes_to_chars(bundle_hash_trytes, bundle_hash, 81);
+		normalize_hash(bundle_hash_trytes, normalized_bundle_hash);
+	}
+
+	// We will also need the private key of the first address
+	// Seed to trits
+	trit_t seed_trits[243];
+	{
+		tryte_t seed_trytes[81];
+		chars_to_trytes(iota_data.seed, seed_trytes, 81);
+		trytes_to_trits(seed_trytes, seed_trits, 81);
+	}
+
+	trit_t private_key_trits[243*27*2];
+	generate_private_key(seed_trits, storage.iota_address_index, private_key_trits);
+
+	// Sign inputs
+	{
+		trit_t first_signature_trits[3*27*81];
+		tryte_t first_signature_trytes[27*81];
+		generate_signature_fragment(&normalized_bundle_hash[0], &private_key_trits[0], first_signature_trits);
+		trits_to_trytes(first_signature_trits, first_signature_trytes, 3*27*81);
+		trytes_to_chars(first_signature_trytes, first_signature, 27*81);
+	}
+
+	{
+		trit_t second_signature_trits[3*27*81];
+		tryte_t second_signature_trytes[27*81];
+		generate_signature_fragment(&normalized_bundle_hash[27], &private_key_trits[6561], second_signature_trits);
+		trits_to_trytes(second_signature_trits, second_signature_trytes, 3*27*81);
+		trytes_to_chars(second_signature_trytes, second_signature, 27*81);
+	}
+
 	return NULL;
 }

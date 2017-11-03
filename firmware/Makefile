@@ -72,6 +72,7 @@ OBJS += ../vendor/iota/addresses.o
 OBJS += ../vendor/iota/bigint.o
 OBJS += ../vendor/iota/conversion.o
 OBJS += ../vendor/iota/kerl.o
+OBJS += ../vendor/iota/transaction.o
 
 # OBJS += protob/pb_common.o
 OBJS += protob/pb_decode.o

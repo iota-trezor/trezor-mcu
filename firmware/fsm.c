@@ -1401,28 +1401,29 @@ void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 
 	CHECK_PIN
 
-	uint32_t seed_idx = 0;
+
 	if (msg->has_seed_index) {
 		// Specific address requested
-		seed_idx = msg->seed_index;
-		storage_setIotaAddressIndex(seed_idx);
-
-	} else if(storage.has_iota_address_index) {
-		// No specific address requested, check storage for index
-		seed_idx = storage.iota_address_index;
-
+		if (msg->seed_index == storage.iota_address_index) {
+			// Same address requested as we already knew about
+			iota_initialize(0, false);
+		} else {
+			// Another address
+			iota_initialize(msg->seed_index, true);
+		}
 	} else {
-		// No index in storage, start at zero
-		storage_setIotaAddressIndex(0);
+		iota_initialize(0, false);
 	}
 
 	// Create a private key
-	const char* public_address = iota_address_from_seed_with_index(seed_idx);
+	//const char* public_address = iota_address_from_seed_with_index(seed_idx, true);
 
 	resp->has_seed_index = true;
-	resp->seed_index = seed_idx;
-	memcpy(resp->address, public_address, 81);
+	resp->seed_index = storage.iota_address_index;
+	memcpy(resp->address, storage.iota_address, 81);
 	msg_write(MessageType_MessageType_IotaAddress, resp);
+
+	layoutHome();
 }
 
 void fsm_msgIotaShowSeed(IotaShowSeed *msg)
@@ -1430,6 +1431,8 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 	CHECK_INITIALIZED
 
 	CHECK_PIN
+
+	iota_initialize(0, false);
 
 	(void) msg;
 	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("display IOTA seed?"), NULL, NULL, NULL, NULL);
@@ -1454,6 +1457,8 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 
 	CHECK_PIN
 
+	iota_initialize(0, false);
+
 	uint32_t seed_index = 0;
 	uint32_t remainder_index = 0;
 
@@ -1474,11 +1479,18 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 		remainder_index = seed_index + 1;
 	}
 
-	iota_create_bundle(msg->receiving_address, msg->transfer_amount, msg->balance, seed_index, remainder_index);
+	iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, seed_index, remainder_index, resp->bundlehash, resp->first_signature, resp->second_signature);
+	resp->has_second_signature = true;
+
+	msg_write(MessageType_MessageType_IotaSignedTx, resp);
+
+	layoutHome();
 }
 
 void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 {
+	iota_initialize(0, false);
+
 	(void) msg;
 }
 

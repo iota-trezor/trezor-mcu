@@ -67,6 +67,7 @@ uint32_t storage_nextU2FCounter(void);
 void storage_setU2FCounter(uint32_t u2fcounter);
 
 uint32_t storage_GetIotaAddressIndex(void);
+void storage_setIotaAddressesInvalid(void);
 void storage_setIotaAddressIndex(uint32_t index);
 
 bool storage_isInitialized(void);
