@@ -1479,7 +1479,12 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 		remainder_index = seed_index + 1;
 	}
 
-	iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, seed_index, remainder_index, resp->bundlehash, resp->first_signature, resp->second_signature);
+	uint64_t timestamp = 0;
+	if (msg->has_timestamp) {
+		timestamp = msg->timestamp;
+	}
+
+	iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, timestamp, seed_index, remainder_index, resp->bundlehash, resp->first_signature, resp->second_signature);
 	resp->has_second_signature = true;
 
 	msg_write(MessageType_MessageType_IotaSignedTx, resp);

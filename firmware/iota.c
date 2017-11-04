@@ -144,7 +144,7 @@ void iota_address_from_seed_with_index(uint32_t index, bool display, char public
 }
 
 // Returns the bundle hash
-const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[])
+const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint64_t timestamp, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[])
 {
 	(void) seed_index;
 	(void) remainder_index;
@@ -162,7 +162,7 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 	tryte_t normalized_bundle_hash[81];
 	{
 		tryte_t bundle_hash_trytes[81];
-		calculate_standard_bundle_hash(storage.iota_address, to_address, storage.iota_next_address, balance, amount, tag, 0, bundle_hash_trytes);
+		calculate_standard_bundle_hash(storage.iota_address, to_address, storage.iota_next_address, balance, amount, tag, timestamp, bundle_hash_trytes);
 		trytes_to_chars(bundle_hash_trytes, bundle_hash, 81);
 		normalize_hash(bundle_hash_trytes, normalized_bundle_hash);
 	}
@@ -180,7 +180,7 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 	generate_private_key(seed_trits, storage.iota_address_index, private_key_trits);
 
 	// Sign inputs
-	{
+	if(1){
 		trit_t first_signature_trits[3*27*81];
 		tryte_t first_signature_trytes[27*81];
 		generate_signature_fragment(&normalized_bundle_hash[0], &private_key_trits[0], first_signature_trits);
@@ -188,7 +188,7 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 		trytes_to_chars(first_signature_trytes, first_signature, 27*81);
 	}
 
-	{
+	if(1){
 		trit_t second_signature_trits[3*27*81];
 		tryte_t second_signature_trytes[27*81];
 		generate_signature_fragment(&normalized_bundle_hash[27], &private_key_trits[6561], second_signature_trits);
