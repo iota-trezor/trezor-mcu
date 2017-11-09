@@ -31,6 +31,11 @@
 
 static struct iota_data_struct iota_data;
 
+void iota_address_generation_progress_callback(uint32_t progress)
+{
+	layoutProgress(_("Generating address."), progress);
+}
+
 void iota_initialize(uint32_t seed_index, bool force_index)
 {
 	// Has to be called before calling any of the other functions in this file.
@@ -132,7 +137,7 @@ void iota_address_from_seed_with_index(uint32_t index, bool display, char public
 		trit_t private_key_trits[243*27*2];
 		generate_private_key(seed_trits, index, private_key_trits);
 		trit_t public_address_trits[243];
-		generate_public_address(private_key_trits, public_address_trits);
+		generate_public_address(private_key_trits, public_address_trits, iota_address_generation_progress_callback);
 
 		trits_to_trytes(public_address_trits, pubkey_addr, 243);
 		trytes_to_chars(pubkey_addr, public_address, 81);
