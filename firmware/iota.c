@@ -27,9 +27,10 @@
 #include "vendor/iota/conversion.h"
 #include "vendor/iota/addresses.h"
 #include "vendor/iota/transaction.h"
-#include <stdio.h>
+#include <string.h>
 
 static CONFIDENTIAL struct iota_data_struct iota_data;
+static iota_unsigned_transaction_type iota_unsigned_transaction;
 
 void iota_address_generation_progress_callback(uint32_t progress)
 {
@@ -128,32 +129,23 @@ void iota_address_from_seed_with_index(uint32_t index, bool display, char public
 	}
 }
 
-// Returns the bundle hash
-const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint64_t timestamp, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[])
+bool iota_sign_transaction(uint64_t transaction_timestamp, char bundle_hash[], char first_signature[], char second_signature[])
 {
-	(void) seed_index;
-	(void) remainder_index;
-	(void) first_signature;
-	(void) second_signature;
-	(void) to_address;
-	(void) amount;
-	(void) balance;
-	(void) timestamp;
-	(void) bundle_hash;
-	/*
-	const char tag[] = "TREZOR999999999999999999999";
-	// Step one is to find out the current address and the next address.
-
-	//char remainder_address[81];
-	//iota_address_from_seed_with_index(remainder_index, false, remainder_address);
-
-	//char from_address[81];
-	//iota_address_from_seed_with_index(seed_index, false, from_address);
+	if (!iota_unsigned_transaction.ready_for_signing) {
+		return false;
+	}
 
 	tryte_t normalized_bundle_hash[81];
 	{
 		tryte_t bundle_hash_trytes[81];
-		calculate_standard_bundle_hash(storage.iota_address, to_address, storage.iota_next_address, balance, amount, tag, timestamp, bundle_hash_trytes);
+		calculate_standard_bundle_hash(iota_unsigned_transaction.input_address,
+									   iota_unsigned_transaction.receiving_address,
+									   iota_unsigned_transaction.remainder_address,
+									   iota_unsigned_transaction.balance,
+									   iota_unsigned_transaction.transfer_amount,
+									   iota_unsigned_transaction.tag,
+									   transaction_timestamp,
+									   bundle_hash_trytes);
 		trytes_to_chars(bundle_hash_trytes, bundle_hash, 81);
 		normalize_hash(bundle_hash_trytes, normalized_bundle_hash);
 	}
@@ -168,7 +160,7 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 	}
 
 	trit_t private_key_trits[243*27*2];
-	generate_private_key(seed_trits, storage.iota_address_index, private_key_trits);
+	generate_private_key(seed_trits, iota_unsigned_transaction.input_address_index, private_key_trits);
 
 	// Sign inputs
 	if(1){
@@ -186,6 +178,16 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 		trits_to_trytes(second_signature_trits, second_signature_trytes, 3*27*81);
 		trytes_to_chars(second_signature_trytes, second_signature, 27*81);
 	}
-*/
-	return NULL;
+
+	return true;
+}
+
+iota_unsigned_transaction_type* iota_unsigned_transaction_get()
+{
+	return &iota_unsigned_transaction;
+}
+
+void iota_unsigned_transaction_erase()
+{
+	memset(&iota_unsigned_transaction, 0, sizeof(iota_unsigned_transaction_type));
 }

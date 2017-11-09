@@ -1478,7 +1478,7 @@ void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 
 void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 {
-	RESP_INIT(IotaSignedTx);
+	RESP_INIT(IotaTxApproved);
 
 	CHECK_INITIALIZED
 
@@ -1488,42 +1488,145 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 		return;
 	}
 
+	iota_unsigned_transaction_erase();
+	iota_unsigned_transaction_type* unsigned_transaction = iota_unsigned_transaction_get();
+
 	uint32_t input_address_index = 0;
 	uint32_t remainder_address_index = 0;
+	char input_address[81];
+	char remainder_address[81];
+	char tag[27] = "TREZOR999999999999999999999";
+	if (msg->has_tag) {
+		memcpy(tag, msg->tag, 27);
+	}
 
 	if (msg->has_input_address_index) {
 		input_address_index = msg->input_address_index;
-
-	} else if (storage.has_iota_address_counter) {
-		input_address_index = storage.iota_address_counter;
-
 	} else {
-		// No index in storage, start at zero
-		storage_setIotaAddressCounter(0);
+		input_address_index = storage_GetIotaAddressCounter();
 	}
+	iota_address_from_seed_with_index(input_address_index, false, input_address);
 
 	if (msg->has_remainder_address_index) {
 		remainder_address_index = msg->remainder_address_index;
 	} else {
 		remainder_address_index = input_address_index + 1;
 	}
+	iota_address_from_seed_with_index(remainder_address_index, false, remainder_address);
 
-	//iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, timestamp, input_address_index, remainder_address_index, resp->bundlehash, resp->first_signature, resp->second_signature);
-	//resp->has_second_signature = true;
+	// Ask the user to confirm the following:
+	// * Receiving address
+	// * Balance
+	// * Transfer amount
+	// * Input address index, but only if not default
+	// * Remainder address index, but only if not default
+	// * Tag
+	// * Timestamp
 
-	(void) remainder_address_index;
-	msg_write(MessageType_MessageType_IotaSignedTx, resp);
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Next"), NULL, _("Use the right button"), _("on the next page"), _("to confirm the"), _("receiving address."), NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	layoutIotaAddress(msg->receiving_address, "Receiving address:");
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	char str_one[30] = {0};
+	char str_two[30] = {0};
+	bn_format_uint64(msg->balance, "", "i", 0, 0, false, str_one, 30);
+	bn_format_uint64(msg->transfer_amount, "", "i", 0, 0, false, str_two, 30);
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Balance:"), str_one, _("Transfer amount:"), str_two, NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	if (msg->has_input_address_index) {
+		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Next"), NULL, _("Non-standard input"), _("address requested."), _("Use the right button"), _("on the next page"), _("to confirm."), NULL);
+		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			layoutHome();
+			return;
+		}
+
+		layoutIotaAddress(input_address, "Input address:");
+		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			layoutHome();
+			return;
+		}
+	}
+
+	if (msg->has_remainder_address_index) {
+		layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Next"), NULL, _("Non-standard rem."), _("address requested."), _("Use the right button"), _("on the next page"), _("to confirm."), NULL);
+		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			layoutHome();
+			return;
+		}
+
+		layoutIotaAddress(remainder_address, "Remainder address:");
+		if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+			fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+			layoutHome();
+			return;
+		}
+	}
+
+	bn_format_uint64(msg->request_timestamp, "", "", 0, 0, false, str_two, 30);
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Sign"), _("Sign transaction"), _("Tag:"), _("TREZOR"), _("Request timestamp:"), str_two, NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	// Transaction is good, remember details and wait to receive timestamp
+	memcpy(unsigned_transaction->receiving_address, msg->receiving_address, 81);
+	unsigned_transaction->input_address_index = input_address_index;
+	memcpy(unsigned_transaction->input_address, input_address, 81);
+	unsigned_transaction->remainder_address_index = remainder_address_index;
+	memcpy(unsigned_transaction->remainder_address, remainder_address, 81);
+	unsigned_transaction->request_timestamp = msg->request_timestamp;
+	unsigned_transaction->transfer_amount = msg->transfer_amount;
+	unsigned_transaction->balance = msg->balance;
+	memcpy(unsigned_transaction->tag, tag, 27);
+	unsigned_transaction->ready_for_signing = true;
+
+	msg_write(MessageType_MessageType_IotaTxApproved, resp);
 
 	layoutHome();
 }
 
 void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 {
+	RESP_INIT(IotaSignedTx)
+
+	// This function should ALWAYS erase the unsigned_transaction before returning.
+
 	if(!iota_initialize()) {
+		iota_unsigned_transaction_erase();
 		return;
 	}
 
-	(void) msg;
+	if (!iota_sign_transaction(msg->transaction_timestamp, resp->bundlehash, resp->first_signature, resp->second_signature)) {
+		iota_unsigned_transaction_erase();
+		fsm_sendFailure(FailureType_Failure_ProcessError, NULL);
+		layoutHome();
+		return;
+	}
+	resp->has_second_signature = true;
+
+	iota_unsigned_transaction_erase();
+	msg_write(MessageType_MessageType_IotaSignedTx, resp);
+	layoutHome();
 }
 
 #if DEBUG_LINK

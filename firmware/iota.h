@@ -28,9 +28,24 @@ struct iota_data_struct {
 	bool seed_ready;
 };
 
+typedef struct {
+	bool ready_for_signing;
+	char receiving_address[81];
+	uint32_t input_address_index;
+	char input_address[81];
+	uint32_t remainder_address_index;
+	char remainder_address[81];
+	uint64_t request_timestamp;
+	uint64_t transfer_amount;
+	uint64_t balance;
+	char tag[27];
+} iota_unsigned_transaction_type;
+
 bool iota_initialize(void);
 const char *iota_get_seed(void);
 void iota_address_from_seed_with_index(uint32_t index, bool display, char public_address[]);
-const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint64_t timestamp, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[]);
+void iota_unsigned_transaction_erase(void);
+iota_unsigned_transaction_type* iota_unsigned_transaction_get(void);
+bool iota_sign_transaction(uint64_t transaction_timestamp, char bundle_hash[], char first_signature[], char second_signature[]);
 
 #endif
