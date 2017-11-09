@@ -1616,6 +1616,14 @@ void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 		return;
 	}
 
+	// Abort if the transaction request was more than 5 minutes ago.
+	if(msg->transaction_timestamp - iota_unsigned_transaction_get()->request_timestamp > 5*60) {
+		iota_unsigned_transaction_erase();
+		fsm_sendFailure(FailureType_Failure_UnexpectedMessage, "Transaction expired.");
+		layoutHome();
+		return;
+	}
+
 	if (!iota_sign_transaction(msg->transaction_timestamp, resp->bundlehash, resp->first_signature, resp->second_signature)) {
 		iota_unsigned_transaction_erase();
 		fsm_sendFailure(FailureType_Failure_ProcessError, NULL);
