@@ -651,21 +651,17 @@ void storage_wipe(void)
 	storage_clearPinArea();
 }
 
-uint32_t storage_GetIotaAddressIndex()
+uint32_t storage_GetIotaAddressCounter()
 {
-	return (storage.has_iota_address_index ? storage.iota_address_index : 0);
+	if (!storage.has_iota_address_counter) {
+		storage_setIotaAddressCounter(0);
+	}
+	return storage.iota_address_counter;
 }
 
-void storage_setIotaAddressesInvalid()
+void storage_setIotaAddressCounter(uint32_t counter)
 {
-	storage.has_iota_address = false;
-	storage.has_iota_next_address = false;
-	storage_commit();
-}
-
-void storage_setIotaAddressIndex(uint32_t index)
-{
-	storage.iota_address_index = index;
-	storage.has_iota_address_index = true;
+	storage.iota_address_counter = counter;
+	storage.has_iota_address_counter = true;
 	storage_commit();
 }

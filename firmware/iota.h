@@ -28,7 +28,7 @@ struct iota_data_struct {
 	bool seed_ready;
 };
 
-void iota_initialize(uint32_t seed_index, bool force_index);
+bool iota_initialize(void);
 const char *iota_get_seed(void);
 void iota_address_from_seed_with_index(uint32_t index, bool display, char public_address[]);
 const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint64_t balance, uint64_t timestamp, uint32_t seed_index, uint32_t remainder_index, char bundle_hash[], char first_signature[], char second_signature[]);

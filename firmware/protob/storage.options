@@ -3,5 +3,3 @@ Storage.pin		max_size:10
 Storage.language	max_size:17
 Storage.label		max_size:33
 Storage.homescreen	max_size:1024
-Storage.iota_address	max_size:81
-Storage.iota_next_address	max_size:81

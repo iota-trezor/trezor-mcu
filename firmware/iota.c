@@ -29,56 +29,36 @@
 #include "vendor/iota/transaction.h"
 #include <stdio.h>
 
-static struct iota_data_struct iota_data;
+static CONFIDENTIAL struct iota_data_struct iota_data;
 
 void iota_address_generation_progress_callback(uint32_t progress)
 {
 	layoutProgress(_("Generating address."), progress);
 }
 
-void iota_initialize(uint32_t seed_index, bool force_index)
+bool iota_initialize()
 {
 	// Has to be called before calling any of the other functions in this file.
 	// It does the following steps:
 	// 1. Get seed from mnemonic
-	// 2. Check if there is a first address, generate if not
-	// 3. Check if there is a next address, generate if not
 
 	// We will always need the seed, doesn't take much time.
 	iota_get_seed();
 
-	// Are we forcing the seed index to some value?
-	if (force_index) {
-		storage_setIotaAddressesInvalid();
-		storage_setIotaAddressIndex(seed_index);
-
-	} else if (storage.has_iota_address_index) {
-		seed_index = storage.iota_address_index;
-
-	} else {
-		// No index in storage, start at zero
-		storage_setIotaAddressesInvalid();
-		storage_setIotaAddressIndex(0);
-		seed_index = 0;
+	// Make sure we have an address counter in storage.
+	if (!storage.has_iota_address_counter) {
+		storage_setIotaAddressCounter(0);
 	}
 
-	// Now we have the seed index. Check if we have the addresses. If not, generate
-	if (!storage.has_iota_address || !storage.has_iota_next_address) {
-		iota_address_from_seed_with_index(seed_index, false, storage.iota_address);
-		iota_address_from_seed_with_index(seed_index+1, false, storage.iota_next_address);
-		storage.has_iota_address = true;
-		storage.has_iota_next_address = true;
-		storage_commit();
-	}
+	return true;
 }
 
 const char* iota_get_seed()
 {
-	if (iota_data.seed_ready) {
-		// seed already generated
-		return iota_data.seed;
-	} else {
+	if (!iota_data.seed_ready) {
 		// generate seed from mnemonic
+		// TODO: Don't use the seed directly.
+		// TODO: NULL check
 		const uint8_t* trezor_seed = storage_getSeed(true);
 		kerl_initialize();
 
@@ -155,6 +135,12 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 	(void) remainder_index;
 	(void) first_signature;
 	(void) second_signature;
+	(void) to_address;
+	(void) amount;
+	(void) balance;
+	(void) timestamp;
+	(void) bundle_hash;
+	/*
 	const char tag[] = "TREZOR999999999999999999999";
 	// Step one is to find out the current address and the next address.
 
@@ -200,6 +186,6 @@ const char* iota_sign_transaction(const char* to_address, uint64_t amount, uint6
 		trits_to_trytes(second_signature_trits, second_signature_trytes, 3*27*81);
 		trytes_to_chars(second_signature_trytes, second_signature, 27*81);
 	}
-
+*/
 	return NULL;
 }

@@ -1393,48 +1393,18 @@ void fsm_msgCosiSign(CosiSign *msg)
 	layoutHome();
 }
 
-void fsm_msgIotaGetAddress(IotaGetAddress *msg)
-{
-	RESP_INIT(IotaAddress);
-
-	CHECK_INITIALIZED
-
-	CHECK_PIN
-
-
-	if (msg->has_seed_index) {
-		// Specific address requested
-		if (msg->seed_index == storage.iota_address_index) {
-			// Same address requested as we already knew about
-			iota_initialize(0, false);
-		} else {
-			// Another address
-			iota_initialize(msg->seed_index, true);
-		}
-	} else {
-		iota_initialize(0, false);
-	}
-
-	// Create a private key
-	//const char* public_address = iota_address_from_seed_with_index(seed_idx, true);
-
-	resp->has_seed_index = true;
-	resp->seed_index = storage.iota_address_index;
-	memcpy(resp->address, storage.iota_address, 81);
-	msg_write(MessageType_MessageType_IotaAddress, resp);
-
-	layoutHome();
-}
-
 void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 {
 	CHECK_INITIALIZED
 
 	CHECK_PIN
 
-	iota_initialize(0, false);
+	if(!iota_initialize()) {
+		return;
+	}
 
 	(void) msg;
+
 	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("display IOTA seed?"), NULL, NULL, NULL, NULL);
 	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
 		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
@@ -1444,8 +1414,65 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 	const char* iota_seed = iota_get_seed();
 	layoutIotaAddress(iota_seed, "IOTA  seed:");
 
+	// Keep showing seed until a button is pressed
 	protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false);
-	fsm_sendSuccess("Seed shown.");
+	fsm_sendSuccess("Seed displayed");
+	layoutHome();
+}
+
+void fsm_msgIotaGetAddressCounter(IotaGetAddressCounter *msg)
+{
+	RESP_INIT(IotaAddressCounter)
+
+	CHECK_INITIALIZED
+
+	CHECK_PIN
+
+	(void) msg;
+
+	resp->address_counter = storage_GetIotaAddressCounter();
+	msg_write(MessageType_MessageType_IotaAddressCounter, resp);
+	layoutHome();
+}
+
+void fsm_msgIotaSetAddressCounter(IotaSetAddressCounter *msg)
+{
+	CHECK_INITIALIZED
+
+	CHECK_PIN
+
+	char str[20] = {0};
+	bn_format_uint64(msg->address_counter, "", "", 0, 0, 0, str, 20);
+	layoutDialogSwipe(&bmp_icon_question, _("Cancel"), _("Confirm"), NULL, _("Do you really want to"), _("set the IOTA address"), _("counter to:"), str, NULL, NULL);
+	if (!protectButton(ButtonRequestType_ButtonRequest_ProtectCall, false)) {
+		fsm_sendFailure(FailureType_Failure_ActionCancelled, NULL);
+		layoutHome();
+		return;
+	}
+
+	storage_setIotaAddressCounter(msg->address_counter);
+	fsm_sendSuccess("Address counter set");
+	layoutHome();
+}
+
+void fsm_msgIotaGetAddress(IotaGetAddress *msg)
+{
+	RESP_INIT(IotaAddress);
+
+	CHECK_INITIALIZED
+
+	CHECK_PIN
+
+	if(!iota_initialize()) {
+		return;
+	}
+
+	// Take address counter from message if available, otherwise from storage
+	uint32_t address_index = (msg->has_address_index ? msg->address_index : storage_GetIotaAddressCounter());
+	iota_address_from_seed_with_index(address_index, false, resp->address);
+	resp->address_index = address_index;
+
+	msg_write(MessageType_MessageType_IotaAddress, resp);
 	layoutHome();
 }
 
@@ -1457,36 +1484,34 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 
 	CHECK_PIN
 
-	iota_initialize(0, false);
+	if(!iota_initialize()) {
+		return;
+	}
 
-	uint32_t seed_index = 0;
-	uint32_t remainder_index = 0;
+	uint32_t input_address_index = 0;
+	uint32_t remainder_address_index = 0;
 
-	if (msg->has_seed_index) {
-		seed_index = msg->seed_index;
+	if (msg->has_input_address_index) {
+		input_address_index = msg->input_address_index;
 
-	} else if (storage.has_iota_address_index) {
-		seed_index = storage.iota_address_index;
+	} else if (storage.has_iota_address_counter) {
+		input_address_index = storage.iota_address_counter;
 
 	} else {
 		// No index in storage, start at zero
-		storage_setIotaAddressIndex(0);
+		storage_setIotaAddressCounter(0);
 	}
 
-	if (msg->has_remainder_index) {
-		remainder_index = msg->remainder_index;
+	if (msg->has_remainder_address_index) {
+		remainder_address_index = msg->remainder_address_index;
 	} else {
-		remainder_index = seed_index + 1;
+		remainder_address_index = input_address_index + 1;
 	}
 
-	uint64_t timestamp = 0;
-	if (msg->has_timestamp) {
-		timestamp = msg->timestamp;
-	}
+	//iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, timestamp, input_address_index, remainder_address_index, resp->bundlehash, resp->first_signature, resp->second_signature);
+	//resp->has_second_signature = true;
 
-	iota_sign_transaction(msg->receiving_address, msg->transfer_amount, msg->balance, timestamp, seed_index, remainder_index, resp->bundlehash, resp->first_signature, resp->second_signature);
-	resp->has_second_signature = true;
-
+	(void) remainder_address_index;
 	msg_write(MessageType_MessageType_IotaSignedTx, resp);
 
 	layoutHome();
@@ -1494,7 +1519,9 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 
 void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 {
-	iota_initialize(0, false);
+	if(!iota_initialize()) {
+		return;
+	}
 
 	(void) msg;
 }
