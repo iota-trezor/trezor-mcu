@@ -22,10 +22,19 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "fsm.h"
+#include "gettext.h"
+#include "layout2.h"
+#include "messages.h"
+#include "storage.h"
+
+// "IOTA" in hex
+#define IOTA_KEY_PATH 0x494f5441
 
 struct iota_data_struct {
 	char seed[81];
 	bool seed_ready;
+	HDNode* node;
 };
 
 typedef struct {
@@ -41,7 +50,7 @@ typedef struct {
 	char tag[27];
 } iota_unsigned_transaction_type;
 
-bool iota_initialize(void);
+bool iota_initialize(HDNode *node);
 const char *iota_get_seed(void);
 void iota_address_from_seed_with_index(uint32_t index, bool display, char public_address[]);
 void iota_unsigned_transaction_erase(void);

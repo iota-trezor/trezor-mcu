@@ -97,6 +97,12 @@ static uint8_t msg_resp[MSG_OUT_SIZE] __attribute__ ((aligned));
 		return; \
 	}
 
+#define IOTA_INITIALIZE \
+	uint32_t key_path = IOTA_KEY_PATH | 0x80000000; \
+	HDNode *node = fsm_getDerivedNode(ED25519_NAME, &key_path, 1); \
+	if (!node) return; \
+	if(!iota_initialize(node)) return;
+
 void fsm_sendSuccess(const char *text)
 {
 	RESP_INIT(Success);
@@ -1399,9 +1405,7 @@ void fsm_msgIotaShowSeed(IotaShowSeed *msg)
 
 	CHECK_PIN
 
-	if(!iota_initialize()) {
-		return;
-	}
+	IOTA_INITIALIZE
 
 	(void) msg;
 
@@ -1428,6 +1432,8 @@ void fsm_msgIotaGetAddressCounter(IotaGetAddressCounter *msg)
 
 	CHECK_PIN
 
+	// Don't need private keys / seeds for this
+
 	(void) msg;
 
 	resp->address_counter = storage_GetIotaAddressCounter();
@@ -1440,6 +1446,8 @@ void fsm_msgIotaSetAddressCounter(IotaSetAddressCounter *msg)
 	CHECK_INITIALIZED
 
 	CHECK_PIN
+
+	// Don't need private keys / seeds for this
 
 	char str[20] = {0};
 	bn_format_uint64(msg->address_counter, "", "", 0, 0, 0, str, 20);
@@ -1463,9 +1471,7 @@ void fsm_msgIotaGetAddress(IotaGetAddress *msg)
 
 	CHECK_PIN
 
-	if(!iota_initialize()) {
-		return;
-	}
+	IOTA_INITIALIZE
 
 	// Take address counter from message if available, otherwise from storage
 	uint32_t address_index = (msg->has_address_index ? msg->address_index : storage_GetIotaAddressCounter());
@@ -1484,9 +1490,7 @@ void fsm_msgIotaTxRequest(IotaTxRequest *msg)
 
 	CHECK_PIN
 
-	if(!iota_initialize()) {
-		return;
-	}
+	IOTA_INITIALIZE
 
 	iota_unsigned_transaction_erase();
 	iota_unsigned_transaction_type* unsigned_transaction = iota_unsigned_transaction_get();
@@ -1611,10 +1615,7 @@ void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 
 	// This function should ALWAYS erase the unsigned_transaction before returning.
 
-	if(!iota_initialize()) {
-		iota_unsigned_transaction_erase();
-		return;
-	}
+	IOTA_INITIALIZE
 
 	// Abort if the transaction request was more than 5 minutes ago.
 	if(msg->transaction_timestamp - iota_unsigned_transaction_get()->request_timestamp > 5*60) {
@@ -1631,9 +1632,14 @@ void fsm_msgIotaTxDetails(IotaTxDetails *msg)
 		return;
 	}
 	resp->has_second_signature = true;
+	uint32_t remainder_address_index = iota_unsigned_transaction_get()->remainder_address_index;
 
 	iota_unsigned_transaction_erase();
 	msg_write(MessageType_MessageType_IotaSignedTx, resp);
+
+	// A signed transaction just left the trezor. Update the address index.
+	storage_setIotaAddressCounter(remainder_address_index);
+
 	layoutHome();
 }
 
