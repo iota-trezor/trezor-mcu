@@ -9,3 +9,11 @@ build/
 *.list
 *.srec
 *.log
+
+# QtCreator IDE files
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+
